@@ -1,5 +1,6 @@
 package java8interview;
 
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -17,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
@@ -33,6 +35,7 @@ public class InterviewQuestionsJava8 {
 		// TODO Auto-generated method stub
 		// mapToInt() always take (Integer :: intValue) as argument. 
 		/*
+		 0. Write code for add by implementing functional interface using java 8. 
 		 1. Sum of a list. ================= Asked in Wipro
 		 2. Min and Max value from a list. ============== Asked in Citius Tech
 		 3. Find the duplicate number from a given Integer list.==================Asked in Citius Tech
@@ -61,7 +64,12 @@ public class InterviewQuestionsJava8 {
 		//18. anyMatch(predicate), allMatch(predicate), nonMatch(predicate)  all return type is boolean.
 		//19. Find top 2 paid employee. limit(2)
 		 * 
-		*/		
+		*/	
+		//0. Write code for add by implementing functional interface using java 8.
+		MyInterface<Integer> impl = (a, b)-> a+b;
+		System.out.println("Addition is : "+impl.add(20, 10));
+		
+		
 		//1. Sum of a list ================= Asked in Wipro
 		List<Integer> listForSum = new ArrayList();
 		listForSum.add(20);listForSum.add(20);listForSum.add(30);listForSum.add(10);listForSum.add(20);
@@ -79,8 +87,9 @@ public class InterviewQuestionsJava8 {
 		List<Integer> intList = Arrays.asList(intArray);
 		//2. Min and Max value from a list ============== Asked in Citius Tech
 		System.out.println("Given list is : "+Arrays.toString(intArray));
-		Integer min = intList.stream().min(Integer::compareTo).get();
+		Integer min = intList.stream().min(Integer::compareTo).get(); // Keep on thing in mind that which method takes Comparator or Comparable then need to use get() method because min, max has used with Optional.
 		Integer max = intList.stream().max(Integer::compareTo).get();
+		max = intList.stream().min(Comparator.comparing(Integer :: intValue)).get();
 		//Second Method :
 		OptionalInt opt = intList.stream().mapToInt(Integer::intValue).max();
 		max = opt.getAsInt();
@@ -91,6 +100,10 @@ public class InterviewQuestionsJava8 {
 		
 		System.out.println("Minimum value from a list is : "+min);
 		System.out.println("Maximum value from a list is : "+max);
+		
+		int maxx = intList.stream().max(Comparator.comparing(Integer :: intValue)).get();
+		System.out.println(maxx);
+		
 		
 		//3. Find the duplicate numbers from a given Integer list.==================Asked in Citius Tech
 		System.out.println("A Given list is : "+intList);
@@ -121,6 +134,15 @@ public class InterviewQuestionsJava8 {
 		Map<String, List<Employee>> map = empList.stream().collect(Collectors.groupingBy(Employee::getName));
 		map.forEach((name,empList1) -> System.out.println("Name : "+name +"->"+empList1));
 		
+		// Convert List to LinkedHashMap where key is Employee name using Stream API
+        var linkedHashMap = empList.stream()
+            .collect(Collectors.toMap(
+                Employee::getName,   // Key: Employee Name
+                e -> e,              // Value: Employee Object
+                (existing, replacement) -> existing,  // Merge Function (if duplicates exist)
+                LinkedHashMap::new   // Preserve insertion order
+            ));
+        System.out.println(linkedHashMap);
 		
 		//5. Sorting a Map as per key.===================Asked in CAPGEMINEE
 		Map<String, Integer> marksMap = new HashMap();
@@ -154,9 +176,13 @@ public class InterviewQuestionsJava8 {
 		
 		//6. Write the java 8 code for printing the odd and even from a list in one java code statement.
 		List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        numbers.stream().collect(Collectors.partitioningBy(n -> n % 2 == 0)) // partitioningBy(n -> n % 2 == 0): Groups the numbers into two lists based on whether the condition (n % 2 == 0) is true (even) or false (odd).
-        .forEach((isEven, nums) -> System.out.println((isEven ? "Even: " : "Odd: ") + nums) ); //forEach(): Iterates over the partitioned map and prints the results. The key isEven determines whether it's the "Even" group or the "Odd" group.
-        
+        //First method
+		numbers.stream().collect(Collectors.partitioningBy(n -> n % 2 == 0)) // partitioningBy(n -> n % 2 == 0): Groups the numbers into two lists based on whether the condition (n % 2 == 0) is true (even) or false (odd). This groups the elements of the list into a Map<Boolean, List<Integer>>.
+        .forEach((keyAsboolean, valueAslist) -> System.out.println((keyAsboolean ? "Even: " : "Odd: ") + valueAslist) ); //forEach(): Iterates over the partitioned map and prints the results. The key keyAsboolean determines whether it's the "Even" group or the "Odd" group.
+        //Second method
+		numbers.stream().collect(Collectors.groupingBy(i -> i%2 == 0)).
+		forEach((k,v) -> System.out.println((k ? "Even : " : "Odd :")+v));
+		
         
         
 		//7. Write the java 8 code for printing the odd and even from a list.
@@ -274,7 +300,7 @@ public class InterviewQuestionsJava8 {
 		
 		//12. toMap(). Find the  map of employee as per key "EmployeeSalary" and value "EmployeeName" and whose salary is less<400000.
 		Map<Double, String> empMap = empList.stream().filter(emp -> emp.getSalary()<= 40000)
-									  .collect(Collectors.toMap(Employee :: getSalary, Employee :: getName));
+									  .collect(Collectors.toMap(Employee :: getSalary, Employee :: getName, (name1, name2) -> name1));
 		System.out.println("Use of toMap() method of Collectors "+empMap);
 		
 		//13. Get all department in a list from Employee list.
@@ -353,12 +379,20 @@ public class InterviewQuestionsJava8 {
 	        // Print the result
 	        System.out.println(nonDuplicates);
 	        
+	        //Second Approach :
+			var dupArr = Arrays.stream(intArr).boxed().filter(i -> Collections.frequency(Arrays.stream(intArr).boxed().toList(), i) < 2 ).mapToInt(Integer :: intValue).toArray();
+			System.out.println(Arrays.toString(dupArr));
+			//3rd Approach
+			var nonRepeated = Arrays.stream(intArr)
+	                .filter(i -> Arrays.stream(intArr).filter(x -> x == i).count() == 1)
+	                .toArray();
+			System.out.println(Arrays.toString(nonRepeated));
 	        
 	        String[] input = {"apple", "banana", "orange", "apricot"}; //{a:"appleapricot", b:"banana", o:"orange"}
 
 
 	        // Use Stream API to group strings by their first character
-	        Map<Character, String> groupedStrings = Arrays.stream(input)
+	        Map<Character, String> joiningValues = Arrays.stream(input)
 	                .collect(Collectors.groupingBy(
 	                        str -> str.charAt(0),               // Group by the first character
 	                        LinkedHashMap::new,                // Preserve insertion order
@@ -421,7 +455,7 @@ public class InterviewQuestionsJava8 {
 	        Stream.iterate(new int[]{0, 1}, arr -> new int[]{arr[1], arr[0] + arr[1]}) // Create the stream
 	                .limit(limit) // Limit the stream to the desired number of terms
 	                .map(arr -> arr[0]) // Extract the first number of the pair
-	                .forEach(System.out::println); // Print each Fibonacci number
+	                .forEach(System.out::println); // Print each Fibonacci number   // new int[]{0, 1}: यह स्ट्रीम की शुरुआत कर रहा है। मतलब पहला एलिमेंट है {0, 1} — यानी कि फाइबोनैचि सीरीज की शुरुआती दो संख्याएं।   arr -> new int[]{arr[1], arr[0] + arr[1]}: यह एक Lambda expression है जो हर अगले एलिमेंट को परिभाषित करता है। arr[1]: इसका मतलब है पिछले जोड़े की दूसरी संख्या को अब पहले स्थान पर ले आओ। arr[0] + arr[1]: इसका मतलब है पहले और दूसरे स्थान की संख्याओं को जोड़कर नया दूसरा एलिमेंट बनाओ।
 	        
 	        //Second Method
 	        Stream.iterate(new int[]{0, 1}, arr -> new int[]{arr[1], arr[0] + arr[1]}) // Create the stream
@@ -434,6 +468,10 @@ public class InterviewQuestionsJava8 {
 	        List<Integer> listInt = Arrays.asList(1,4,-2,-9,5);
 			List<Integer> sortIntL = listInt.stream().sorted(Comparator.comparing(i -> Math.abs((int) i)).reversed()).toList();
 			System.out.println(sortIntL);
+			//Or,
+			sortIntL = listInt.stream().sorted(Comparator.comparing(i -> Math.abs((int) i)).reversed()).toList();
+			System.out.println(sortIntL);
+			
 			// Merge arrays into a single array using Stream API
 			//First Method
 			int[] arr1 = {1, 2}; int[] arr2 = {3, 4, 5}; int[] arr3 = {6, 7, 8, 9}; int[] arr4 = {10, 11, 12, 13};
@@ -493,10 +531,185 @@ public class InterviewQuestionsJava8 {
 	        		.collect(Collectors.groupingBy(Function.identity(), LinkedHashMap :: new, Collectors.counting()))
 	        		.entrySet().stream().filter(entry -> entry.getValue() == 1).map(Map.Entry :: getKey).findFirst().get();
 	        System.out.println(nonRepeating);
+	        
+	        //Last non-repeatitive char
+	        nonRepeating = givenstr.chars().mapToObj(ch -> (char)ch).collect(Collectors.groupingBy(Function.identity(), LinkedHashMap :: new, Collectors.counting()))
+			.entrySet().stream().filter(entry -> entry.getValue() == 1).reduce((first,second) -> second).map(Map.Entry :: getKey).get();
+	        System.out.println(nonRepeating);
+	        
+	        //Other way of using Flat map 
+	        List<List<String>> departEmps = Arrays.asList(Arrays.asList("Hri", "Day"), 
+	        		Arrays.asList("Ku", "Mar"), Arrays.asList("Sri", "Vastava"));
+	        System.out.println(departEmps);
+	        var ftMap = departEmps.stream().flatMap(List :: stream).toList();
+	        System.out.println(ftMap);
 	
+	        //Move the zero right side  int[] intArray = {1,2,-3,0,0,8,-5,0,4}; like [1, 2, -3, 8, -5, 4, 0, 0, 0] without changing the position of non zeros
+	        int[] intArry = {1,2,-3,0,0,8,-5,0,4};
+	        var moved = Stream.of(Arrays.stream(intArry).filter(i -> i != 0).toArray(), Arrays.stream(intArry).filter(i -> i == 0).toArray()).flatMapToInt(Arrays :: stream).toArray();
+	        System.out.println(Arrays.toString(moved));
+	        
+	      //Write a Java program using stream api to check if a vowel is present in a string or not ?
+	        
+	        //1st Approach
+	        String inputtt = "ChatGPT"; 
+
+	        boolean containsVowel = inputtt.toLowerCase()
+	                                     .chars() // character stream बनाता है
+	                                     .mapToObj(c -> (char) c) // int को char में बदला
+	                                     .anyMatch(c -> "aeiou".indexOf(c) != -1); // यह c को aeiou में ढूँढता है। अगर मिल जाता है, तो उसका index (स्थान) return करता है, और अगर नहीं मिलता तो -1 return करता है।
+
+	        if (containsVowel) {
+	            System.out.println("String contains at least one vowel.");
+	        } else {
+	            System.out.println("String does not contain any vowel.");
+	        }
+	        
+	        //Second Approach
+	        List vowNonVow = inputtt.chars().mapToObj(i -> (char)i).filter(i -> "AaEeIiOoUu".contains(""+i)).toList().stream().toList();
+	        if(vowNonVow.isEmpty())System.out.println("String contains vowel");
+	        else System.out.println("String doesn't contain vowel");
+	        
+	        
+	        //How we convert immutable collection like list, set into mutable or modifiable collection.
+	        List<String> l8 = List.of("A","B","C");
+			System.out.println(l8);
+			List<String> l9 = new ArrayList<>(l8);
+			l9.remove(1);
+			
+			System.out.println(l9);
+			
+			// As per multiple condition if we need to update employee list and get the  updated list as output.
+			List<Employee> updatedList = empList.stream()
+				    .peek(emp -> {
+				        if (emp.getDepartment().equalsIgnoreCase("Engineering")
+				            && emp.getSalary() < 60000 ) {
+				            emp.setSalary(emp.getSalary() * 1.10);
+				        }
+				    })
+				    .collect(Collectors.toList());
+			System.out.println(updatedList);
+			
+			//Or,
+			
+			updatedList = empList.stream()
+				    .map(emp -> {
+				        if (emp.getDepartment().equalsIgnoreCase("Engineering") 
+				                && emp.getSalary() < 600000) {
+				            emp.setSalary(emp.getSalary() + emp.getSalary() * 10 / 100);
+				        }
+				        return emp;   // ✅ THIS IS IMPORTANT
+				    })
+				    .toList();
+			
+			// Find the number of vowels and consonants from a String
+			String countVC = "My name is Hriday Kumar";
+
+			countVC.toLowerCase()
+			       .chars()
+			       .mapToObj(ch -> (char) ch)
+			       .filter(Character::isLetter)
+			       .collect(Collectors.groupingBy(c -> "aeiou".indexOf(c) >= 0))
+			       .forEach((isVowel, letters) -> {
+			           if (isVowel)
+			               System.out.println("Number of Vowels: " + letters.size() + " " + letters);
+			           else
+			               System.out.println("Number of Consonants: " + letters.size() + " " + letters);
+			       });
+			
+			
+			//20. Map1 and Map2 are there. Need to map map1 key with map2 value.
+			Map<String, Integer> m1 = new LinkedHashMap<>(); m1.put("Hriday", 12); m1.put("Anaya", 20); m1.put("Vinay", 39);
+			Map<Integer, String> m2 = new LinkedHashMap<>(); m2.put(1, "Patna");m2.put(2, "Delhi");m2.put(3, "Mumbai");
+			
+					
+			Map<String, String> result =
+					IntStream.range(0, Math.min(m1.size(), m2.size()))
+					    .boxed()
+					    .collect(Collectors.toMap(
+					        i -> new ArrayList<>(m1.keySet()).get(i),   // Map1 Key
+					        i -> new ArrayList<>(m2.values()).get(i),   // Map2 Value
+					        (a,b)->a,
+					        LinkedHashMap::new
+					    ));
+			
+			System.out.println(result);
+			
+			Map<String, String> sortedResult =
+					IntStream.range(0, m1.size())
+					    .boxed()
+					    .collect(Collectors.toMap(
+					        i -> m1.keySet().stream().sorted().toList().get(i),
+					        i -> m2.values().stream().sorted().toList().get(i),
+					        (a,b)->b,
+					        LinkedHashMap::new
+					    ));
+
+					System.out.println(sortedResult);
+					
+			// Find the sum of 2D array
+			int[][] arrOf2D = { {2, 3}, {3, 4}, {4, 5} };
+	
+			int sum = Arrays.stream(arrOf2D)          // Stream of int[]
+            .flatMapToInt(Arrays::stream)  // flatten to IntStream
+            .sum();           // sum all elements
+
+			System.out.println("Sum of all elements: " + sum);
+			
+			
+			// String s= "hello world java";//			output =HelloWorldJava
+			String s = "hello world java";
+			String resultt = Stream.of(s.split(" "))
+	                .map(w -> Character.toUpperCase(w.charAt(0)) + w.substring(1))
+	                .collect(Collectors.joining());
+
+	        System.out.println(resultt);
+	        
+	        // Find the highest salary paid employee as per departments.
+	        Map<String, Employee> deptHighSalary =
+	        	    empList.stream()
+	        	        .collect(Collectors.groupingBy(
+	        	            Employee::getDepartment,
+	        	            Collectors.collectingAndThen(
+	        	                Collectors.maxBy(Comparator.comparing(Employee::getSalary)),
+	        	                Optional::get
+	        	            )
+	        	        ));
+	        
+	        System.out.println(deptHighSalary);
+
+	        //Find the highest salary as per each departments
+	        Map<String, Double> resultttt =
+	        		empList.stream()
+	        	        .collect(Collectors.groupingBy(
+	        	            Employee::getDepartment,
+	        	            Collectors.mapping(
+	        	                Employee::getSalary,
+	        	                Collectors.collectingAndThen(
+	        	                    Collectors.maxBy(Double::compare),
+	        	                    Optional::get
+	        	                )
+	        	            )
+	        	        ));
+	        
+	        System.out.println(resultttt);
+	        
+	        
+	      // Find sorted employee list.
+	       // List<Map<String, Employee>> listEmpMaps;
+	        
+	       // Find the 3rd highest number from below string String value = "56834901"; // "c - '0' converts a numeric character into its integer value by subtracting the ASCII value of '0'."
+	        String value = "56834901";
+	        var thirdLargesNumber = value.chars()
+	        								.map(c -> (int)c) // c actually digit नहीं है c उसका ASCII value है. 👉 '0' भी एक character है  इसका ASCII value = 48
+	        								.boxed()
+	        								.distinct().sorted(Comparator.comparing(Integer::intValue).reversed())
+	        								.skip(2).findFirst().get();
+	        System.out.println(thirdLargesNumber);
+	        	// Instead of map we can use mapToObj(Character :: getNumericValue)							
+	        							
+
 
 	}
-
-
-
+	
 }
